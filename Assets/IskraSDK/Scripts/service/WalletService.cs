@@ -13,6 +13,7 @@ namespace Iskra
         private string walletWebUrl;
         private string redirectUrl;
 
+# if UNITY_WEBGL
         public delegate void WalletWebMessageCallback(string data);
 
         [DllImport("__Internal")]
@@ -27,6 +28,7 @@ namespace Iskra
             Debug.Log("WalletConnector#Callback: " + data);
             Close();
         }
+#endif
 
         public void SetUrls(string walletWebUrl, string redirectUrl)
         {
@@ -34,13 +36,15 @@ namespace Iskra
             this.redirectUrl = redirectUrl;
         }
 
+# if UNITY_WEBGL
         public void OpenWallet(string appId, string accessToken, string data, string userId)
         {
             var query = string.Format("?appId={0}&accessToken={1}&data={2}&userId={3}", appId, accessToken, data,
                 userId);
             Open(walletWebUrl, query, Utils.GetBaseUrl(redirectUrl), Callback);
         }
-
+#endif
+        
         public void MobileOpenWallet(string appId, string accessToken, string data, string userId)
         {
             var url = string.Format("{0}?appId={1}&accessToken={2}&data={3}&userId={4}", 

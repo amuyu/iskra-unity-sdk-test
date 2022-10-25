@@ -55,7 +55,7 @@ namespace Iskra
 
         public void Login(AuthService.LoginCallback callback)
         {
-#if UNITY_ANDROID
+#if UNITY_ANDROID || UNITY_IOS
             _authService.MobileSignIn(_configuration.appId, callback);
 #else
             _authService.SignIn(_configuration.appId, callback);
@@ -73,7 +73,7 @@ namespace Iskra
 
         public void ShowTermsView(TermsService.TermsViewCallback callback)
         {
-#if UNITY_ANDROID
+#if UNITY_ANDROID || UNITY_IOS
             _termsService.MobileOpenTermsWeb(_configuration.appId, auth.accessToken, callback);
 #else
             _termsService.OpenWeb(_configuration.appId, auth.accessToken, callback);
@@ -93,7 +93,7 @@ namespace Iskra
             _transactionService.SetWebSocketUrl(websocketUrl);
             _transactionService.PrepareSigning(callback, data =>
             {
-#if UNITY_ANDROID
+#if UNITY_ANDROID || UNITY_IOS
                 _walletService.MobileOpenWallet(_configuration.appId, auth.accessToken, data, auth.userId);
 #else
                 _walletService.OpenWallet(_configuration.appId, auth.accessToken, data, auth.userId);

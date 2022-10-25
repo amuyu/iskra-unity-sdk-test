@@ -33,6 +33,7 @@ namespace Iskra
 
         public async void Connect(string url, IWebSocketAdapter webSocketAdapter)
         {
+            _webSocket = new WebSocket(url);
             _webSocket.OnOpen += () =>
             {
                 Debug.Log("Connection open!");

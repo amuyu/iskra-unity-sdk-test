@@ -16,6 +16,7 @@ namespace Iskra
 
         public delegate void TermsViewCallback(Terms terms, Error error);
 
+# if UNITY_WEBGL
         public delegate void OnTermsWebOpenCallback(string data);
 
         [DllImport("__Internal")]
@@ -31,6 +32,7 @@ namespace Iskra
             _termsViewCallback.Invoke(terms, null);
             Close();
         }
+#endif
 
         private static TermsViewCallback _termsViewCallback;
 
@@ -40,12 +42,14 @@ namespace Iskra
             this.redirectUrl = redirectUrl;
         }
 
+# if UNITY_WEBGL
         public void OpenWeb(string appId, string accessToken, TermsViewCallback callback)
         {
             _termsViewCallback = callback;
             var query = string.Format("?appId={0}&accessToken={1}", appId, accessToken);
             Open(openWebUrl, query, Utils.GetBaseUrl(redirectUrl), Callback);
         }
+#endif
 
         public void MobileOpenTermsWeb(string appId, string accessToken, TermsViewCallback callback)
         {
@@ -105,14 +109,19 @@ namespace Iskra
                         Debug.LogFormat("Loaded Page:{0}", data);
                         Uri uri = new Uri(data);
                         Uri redirectUri = new Uri(redirectUrl);
+                        Debug.LogFormat("redirect:{0}", redirectUri.AbsolutePath);
                         if (uri.AbsolutePath == redirectUri.AbsolutePath)
                         {
                             var parameters = HttpUtility.ParseQueryString(uri.Query);
                             var agree = parameters["agree"];
+                            Debug.LogFormat("agree:{0}", agree);
                             var terms = new Terms
                             {
                                 agree = (agree == "true")
                             };
+                            Debug.LogFormat("terms.agree:{0}", terms.agree);
+                            Debug.LogFormat("termsViewCallback:{0}", _termsViewCallback);
+                            Debug.LogFormat("termsViewCallback is null? {0}", _termsViewCallback == null);
                             _termsViewCallback.Invoke(terms, null);
                             GpmWebView.Close();
                         }

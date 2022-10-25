@@ -341,7 +341,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 449221770}
         m_TargetAssemblyTypeName: Replay, Assembly-CSharp
-        m_MethodName: Signature
+        m_MethodName: GetTermsAgree
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -1079,3 +1079,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9e6c29d5e45af4b5a859569c6459cd8e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  nameText: {fileID: 1169707114}
+  tokenText: {fileID: 605759939}

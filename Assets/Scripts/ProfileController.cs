@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using Iskra;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -12,8 +13,9 @@ public class ProfileController : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        nameText.text = "id:" + Auth.userId;
-        tokenText.text = "token:" + Auth.accessToken;
+        Debug.Log("IskraAuth:" + IskraSDK.Instance.auth);
+        nameText.text = "id:" + IskraSDK.Instance.auth.userId;
+        tokenText.text = "token:" + IskraSDK.Instance.auth.accessToken;
         // StartCoroutine(fetchMe()); 
     }
 

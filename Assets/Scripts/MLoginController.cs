@@ -46,10 +46,7 @@ public class MLoginController : MonoBehaviour
             }
             else
             {
-                Auth.userId = data.userId;
-                Auth.accessToken = data.accessToken;
                 Debug.Log("userId:" + data.userId);
-                Debug.Log("walletAddress:" + data.walletAddress);
                 Debug.Log("accessToken:" + data.accessToken);
                 Debug.Log("refreshToken:" + data.refreshToken);
                 SceneManager.LoadScene("ProfileScene");

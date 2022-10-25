@@ -18,6 +18,7 @@ namespace Iskra
 
         public delegate void LogoutCallback(Error error);
 
+# if UNITY_WEBGL
         public delegate void OnOpenCallback(string data);
 
         [DllImport("__Internal")]
@@ -37,6 +38,7 @@ namespace Iskra
             _loginCallback.Invoke(IskraSDK.Instance.auth, null);
             Close();
         }
+#endif
 
         private static LoginCallback _loginCallback;
 
@@ -46,6 +48,7 @@ namespace Iskra
             this.redirectUrl = redirectUrl;
         }
 
+# if UNITY_WEBGL
         // WebGL
         public void SignIn(string appId, LoginCallback callback)
         {
@@ -53,11 +56,13 @@ namespace Iskra
             var query = "?appId=" + appId;
             Open(openWebUrl, query, Utils.GetBaseUrl(redirectUrl), Callback);
         }
+#endif
 
         public void MobileSignIn(string appId, LoginCallback callback)
         {
             _loginCallback = callback;
             var url = string.Format("{0}?appId={1}", openWebUrl, appId);
+            Debug.Log("url:" + url);
             GpmWebView.ShowUrl(
                 url,
                 new GpmWebViewRequest.Configuration()
