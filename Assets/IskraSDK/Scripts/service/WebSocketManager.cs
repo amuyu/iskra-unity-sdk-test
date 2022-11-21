@@ -1,7 +1,7 @@
 using NativeWebSocket;
 using UnityEngine;
 
-namespace Iskra
+namespace Iskra.Service
 {
     public interface IWebSocketAdapter
     {

@@ -1,4 +1,5 @@
 using System;
+using Iskra.Service;
 
 namespace Iskra
 {
@@ -6,9 +7,6 @@ namespace Iskra
     {
         public const string VERSION = "0.1.0";
 
-        private AuthService _authService;
-        private TermsService _termsService;
-        private WalletService _walletService;
         private TransactionService _transactionService;
 
         private Configuration _configuration;
@@ -19,9 +17,6 @@ namespace Iskra
 
         public IskraSDK()
         {
-            _authService = new AuthService();
-            _termsService = new TermsService();
-            _walletService = new WalletService();
             _transactionService = new TransactionService();
         }
 
@@ -46,20 +41,16 @@ namespace Iskra
             {
                 initialized = (error == null);
                 this._configuration = configuration;
-                _authService.SetUrls(this._configuration.authUrl, this._configuration.authRedirectUrl);
-                _walletService.SetUrls(this._configuration.walletUrl, this._configuration.walletRedirectUrl);
-                _termsService.SetUrls(this._configuration.termsUrl, this._configuration.termsRedirectUrl);
+                AuthService.Instance.SetUrls(this._configuration.authUrl, this._configuration.authRedirectUrl);
+                TermsService.Instance.SetUrls(this._configuration.termsUrl, this._configuration.termsRedirectUrl);
+                WalletService.Instance.SetUrls(this._configuration.walletUrl, this._configuration.walletRedirectUrl);
                 callback(error);
             });
         }
 
         public void Login(AuthService.LoginCallback callback)
         {
-#if UNITY_ANDROID || UNITY_IOS
-            _authService.MobileSignIn(_configuration.appId, callback);
-#else
-            _authService.SignIn(_configuration.appId, callback);
-#endif
+            AuthService.Instance.SignIn(_configuration.appId, callback);
         }
 
         public void GetTermsAgree(ConfigureManager.GetTermsAgreeCallback callback)
@@ -73,11 +64,7 @@ namespace Iskra
 
         public void ShowTermsView(TermsService.TermsViewCallback callback)
         {
-#if UNITY_ANDROID || UNITY_IOS
-            _termsService.MobileOpenTermsWeb(_configuration.appId, auth.accessToken, callback);
-#else
-            _termsService.OpenWeb(_configuration.appId, auth.accessToken, callback);
-#endif
+            TermsService.Instance.OpenWeb(_configuration.appId, auth.accessToken, callback);
         }
 
         public void Logout(AuthService.LogoutCallback callback)
@@ -93,11 +80,7 @@ namespace Iskra
             _transactionService.SetWebSocketUrl(websocketUrl);
             _transactionService.PrepareSigning(callback, data =>
             {
-#if UNITY_ANDROID || UNITY_IOS
-                _walletService.MobileOpenWallet(_configuration.appId, auth.accessToken, data, auth.userId);
-#else
-                _walletService.OpenWallet(_configuration.appId, auth.accessToken, data, auth.userId);
-#endif
+                WalletService.Instance.OpenWallet(_configuration.appId, auth.accessToken, data, auth.userId);
             });
         }
     }

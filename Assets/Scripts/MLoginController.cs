@@ -9,7 +9,8 @@ public class MLoginController : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        var appId = "EalSEwkoUHgMuSOYqxoB";
+        // var appId = "EalSEwkoUHgMuSOYqxoB";
+        var appId = "ho3gx52pKd0Emi21IQ1C";
         var phase = "dev";
         IskraSDK.Instance.Initialize(phase, appId, error =>
         {

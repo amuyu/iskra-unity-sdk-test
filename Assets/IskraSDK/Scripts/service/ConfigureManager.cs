@@ -2,7 +2,7 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.Networking;
 
-namespace Iskra
+namespace Iskra.Service
 {
     public class ConfigureManager : MonoBehaviour
     {

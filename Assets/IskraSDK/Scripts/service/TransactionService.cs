@@ -2,7 +2,7 @@ using System;
 using NativeWebSocket;
 using UnityEngine;
 
-namespace Iskra
+namespace Iskra.Service
 {
     public class TransactionService : MonoBehaviour, IWebSocketAdapter
     {

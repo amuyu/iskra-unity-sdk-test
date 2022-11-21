@@ -1,4 +1,4 @@
-namespace Iskra
+namespace Iskra.Service
 {
     public class ProgressEventCallback
     {
