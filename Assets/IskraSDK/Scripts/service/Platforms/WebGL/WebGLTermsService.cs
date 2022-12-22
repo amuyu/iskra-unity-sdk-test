@@ -1,14 +1,14 @@
 #if UNITY_WEBGL
+using System;
 using System.Runtime.InteropServices;
 using AOT;
+using Iskra.Common;
 using UnityEngine;
 
 namespace Iskra.Service.Platforms.WebGL
 {
     public class WebGLTermsService : ITermsService
     {
-        private string _openWebUrl;
-        private string _redirectUrl;
         private TermsService.TermsViewCallback _termsViewCallback;
 
         public delegate void OnTermsWebOpenCallback(string data);
@@ -22,27 +22,60 @@ namespace Iskra.Service.Platforms.WebGL
         [MonoPInvokeCallback(typeof(OnTermsWebOpenCallback))]
         public static void Callback(string data)
         {
-            var terms = JsonUtility.FromJson<Terms>(data);
-            if (TermsService.Instance.termsService is WebGLTermsService termsService)
+            // Debug.Log("TermsCallback.data:" + data);
+            Error error = null;
+            if (data == null)
             {
-                termsService._termsViewCallback.Invoke(terms, null);
+                error = new Error
+                {
+                    code = ErrorCode.WEBVIEW_CLOSED.ToString(),
+                    message = "WebView is closed."
+                };
+            }
+            else
+            {
+                try
+                {
+                    var terms = JsonUtility.FromJson<Terms>(data);
+                    if (terms != null)
+                    {
+                        TermsService.Instance.termsService.GetTermsViewCallback().Invoke(terms, null);
+                        Close();
+                        return;
+                    }
+
+                    error = new Error
+                    {
+                        code = ErrorCode.INTERNAL_ERROR.ToString(),
+                        message = "Failed to agree to terms."
+                    };
+                }
+                catch (Exception e)
+                {
+                    error = new Error
+                    {
+                        code = ErrorCode.INTERNAL_ERROR.ToString(),
+                        message = e.Message
+                    };
+                }
             }
 
+
+            TermsService.Instance.termsService.GetTermsViewCallback().Invoke(null, error);
             Close();
         }
 
-
-        public void SetUrls(string openWebUrl, string redirectUrl)
+        public void OpenWeb(string accessToken, TermsService.TermsViewCallback callback)
         {
-            _openWebUrl = openWebUrl;
-            _redirectUrl = redirectUrl;
+            var configuration = IskraSDK.Instance.GetConfiguration();
+            _termsViewCallback = callback;
+            var query = string.Format("?appId={0}&accessToken={1}", configuration.appId, accessToken);
+            Open(configuration.termsUrl, query, Utils.GetBaseUrl(configuration.termsRedirectUrl), Callback);
         }
 
-        public void OpenWeb(string appId, string accessToken, TermsService.TermsViewCallback callback)
+        public TermsService.TermsViewCallback GetTermsViewCallback()
         {
-            _termsViewCallback = callback;
-            var query = string.Format("?appId={0}&accessToken={1}", appId, accessToken);
-            Open(_openWebUrl, query, Utils.GetBaseUrl(_redirectUrl), Callback);
+            return _termsViewCallback;
         }
     }
 }

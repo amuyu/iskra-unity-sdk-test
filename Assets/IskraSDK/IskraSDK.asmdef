@@ -1,0 +1,16 @@
+{
+    "name": "IskraSDK",
+    "references": [
+        "GUID:8d7685aff7c54a9b85bb54bd5a1a0010",
+        "GUID:fef2471e741feb54f81a6ddb4619f9e4"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

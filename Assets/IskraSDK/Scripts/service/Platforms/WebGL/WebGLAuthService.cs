@@ -1,16 +1,17 @@
 #if UNITY_WEBGL
+using System;
 using System.Runtime.InteropServices;
 using AOT;
+using Iskra.Common;
 using UnityEngine;
 
 namespace Iskra.Service.Platforms.WebGL
 {
     public class WebGLAuthService : IAuthService
     {
-        private string _openWebUrl;
-        private string _redirectUrl;
         AuthService.LoginCallback _loginCallback;
-        
+        private IAuthTokenManager authTokenManager;
+
         public delegate void OnOpenCallback(string data);
 
         [DllImport("__Internal")]
@@ -22,31 +23,93 @@ namespace Iskra.Service.Platforms.WebGL
         [MonoPInvokeCallback(typeof(OnOpenCallback))]
         public static void Callback(string data)
         {
-            var auth = JsonUtility.FromJson<Auth>(data);
-            if (auth != null && !string.IsNullOrEmpty(auth.accessToken))
+            // Debug.Log("LoginCallback.data:" + data);
+            Error error = null;
+            if (data == null)
             {
-                IskraSDK.Instance.auth = auth;
+                error = new Error
+                {
+                    code = ErrorCode.WEBVIEW_CLOSED.ToString(),
+                    message = "WebView is closed."
+                };
+            }
+            else
+            {
+                try
+                {
+                    var auth = JsonUtility.FromJson<Auth>(data);
+                    if (auth != null && !auth.IsEmpty())
+                    {
+                        IskraSDK.Instance.auth = auth;
+                        AuthService.Instance.authService.StoreToken(auth);
+                        AuthService.Instance.authService.GetLoginCallback().Invoke(IskraSDK.Instance.auth, null);
+                        Close();
+                        return;
+                    }
+
+                    error = new Error
+                    {
+                        code = ErrorCode.INTERNAL_ERROR.ToString(),
+                        message = "Failed to login."
+                    };
+                }
+                catch (Exception e)
+                {
+                    error = new Error
+                    {
+                        code = ErrorCode.INTERNAL_ERROR.ToString(),
+                        message = e.Message
+                    };
+                }
             }
 
-            if (AuthService.Instance.authService is WebGLAuthService authService)
-            {
-                authService._loginCallback.Invoke(IskraSDK.Instance.auth, null);
-            }
+            AuthService.Instance.authService.GetLoginCallback().Invoke(null, error);
             Close();
         }
-        
-        
-        public void SetUrls(string openWebUrl, string redirectUrl)
+
+        public void StoreToken(Auth auth)
         {
-            _openWebUrl = openWebUrl;
-            _redirectUrl = redirectUrl;
+            var authToken = JsonUtility.ToJson(auth);
+            GetAuthTokenManager().StoreToken(authToken);
         }
 
-        public void SignIn(string appId, AuthService.LoginCallback callback)
+        public Auth GetLastLogin()
         {
+            var authToken = GetAuthTokenManager().GetToken();
+            if (authToken == null || string.IsNullOrEmpty(authToken)) return null;
+            var auth = JsonUtility.FromJson<Auth>(authToken);
+            IskraSDK.Instance.auth = auth;
+            return auth;
+        }
+
+        public void Login(AuthService.LoginCallback callback)
+        {
+            var configuration = IskraSDK.Instance.GetConfiguration();
             _loginCallback = callback;
-            var query = "?appId=" + appId;
-            Open(_openWebUrl, query, Utils.GetBaseUrl(_redirectUrl), Callback);
+            var query = "?appId=" + configuration.appId;
+            Open(configuration.authUrl, query, Utils.GetBaseUrl(configuration.authRedirectUrl), Callback);
+        }
+
+        public void Logout(AuthService.LogoutCallback callback)
+        {
+            GetAuthTokenManager().RemoveToken();
+            callback(null);
+        }
+
+        private IAuthTokenManager GetAuthTokenManager()
+        {
+            if (authTokenManager == null)
+            {
+                var configuration = IskraSDK.Instance.GetConfiguration();
+                authTokenManager = new WebGLAuthTokenManager(configuration.appId);
+            }
+
+            return authTokenManager;
+        }
+
+        public AuthService.LoginCallback GetLoginCallback()
+        {
+            return _loginCallback;
         }
     }
 }

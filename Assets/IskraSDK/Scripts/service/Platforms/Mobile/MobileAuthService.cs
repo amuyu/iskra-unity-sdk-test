@@ -3,26 +3,53 @@ using System;
 using System.Collections.Generic;
 using System.Web;
 using Gpm.WebView;
+using Iskra.Common;
 using UnityEngine;
+using Logger = Iskra.Common.Logger;
 
 namespace Iskra.Service.Platforms.Mobile
 {
     public class MobileAuthService : IAuthService
     {
-        private string _openWebUrl;
-        private string _redirectUrl;
         private AuthService.LoginCallback _loginCallback;
-        
-        public void SetUrls(string openWebUrl, string redirectUrl)
+        private IAuthTokenManager authTokenManager;
+
+        public MobileAuthService()
         {
-            _openWebUrl = openWebUrl;
-            _redirectUrl = redirectUrl;
+#if UNITY_ANDROID
+            authTokenManager = new AndroidAuthTokenManager();
+#elif UNITY_IOS
+            authTokenManager = new IOSAuthTokenManager();
+#endif
+            authTokenManager.Initialize();
         }
 
-        public void SignIn(string appId, AuthService.LoginCallback callback)
+        public void StoreToken(Auth auth)
         {
+            var authToken = JsonUtility.ToJson(auth);
+            authTokenManager.StoreToken(authToken);
+        }
+
+        public void Logout(AuthService.LogoutCallback callback)
+        {
+            authTokenManager.RemoveToken();
+            callback(null);
+        }
+
+        public Auth GetLastLogin()
+        {
+            var authToken = authTokenManager.GetToken();
+            if (authToken == null || string.IsNullOrEmpty(authToken)) return null;
+            var auth = JsonUtility.FromJson<Auth>(authToken);
+            IskraSDK.Instance.auth = auth;
+            return auth;
+        }
+
+        public void Login(AuthService.LoginCallback callback)
+        {
+            var configuration = IskraSDK.Instance.GetConfiguration();
             _loginCallback = callback;
-            var url = string.Format("{0}?appId={1}", _openWebUrl, appId);
+            var url = string.Format("{0}?appId={1}", configuration.authUrl, configuration.appId);
             GpmWebView.ShowUrl(
                 url,
                 new GpmWebViewRequest.Configuration()
@@ -30,14 +57,14 @@ namespace Iskra.Service.Platforms.Mobile
                     style = GpmWebViewStyle.FULLSCREEN,
                     isClearCookie = true,
                     isClearCache = true,
-                    isNavigationBarVisible = false,
-                    navigationBarColor = "#4B96E6",
-                    title = "The page title.",
-                    isBackButtonVisible = true,
-                    isForwardButtonVisible = true,
+                    isNavigationBarVisible = true,
+                    navigationBarColor = "#232441",
+                    title = " ",
+                    isBackButtonVisible = false,
+                    isForwardButtonVisible = false,
                     supportMultipleWindows = true,
 #if UNITY_IOS
-            contentMode = GpmWebViewContentMode.MOBILE
+                    contentMode = GpmWebViewContentMode.MOBILE
 #endif
                 },
                 OnMobileWebViewCallback,
@@ -46,8 +73,8 @@ namespace Iskra.Service.Platforms.Mobile
                     "USER_ CUSTOM_SCHEME"
                 });
         }
-        
-              private void OnMobileWebViewCallback(
+
+        private void OnMobileWebViewCallback(
             GpmWebViewCallback.CallbackType callbackType,
             string data,
             GpmWebViewError error)
@@ -57,22 +84,29 @@ namespace Iskra.Service.Platforms.Mobile
                 case GpmWebViewCallback.CallbackType.Open:
                     if (error != null)
                     {
-                        Debug.LogFormat("Fail to open WebView. Error:{0}", error);
+                        Logger.Debug(string.Format("Fail to open WebView. Error:{0}", error), this);
                     }
+
                     break;
                 case GpmWebViewCallback.CallbackType.Close:
                     if (error != null)
                     {
-                        Debug.LogFormat("Fail to close WebView. Error:{0}", error);
+                        Logger.Debug(string.Format("Fail to close WebView. Error:{0}", error), this);
                     }
 
+                    InvokeCallback(null, new Error
+                    {
+                        code = ErrorCode.WEBVIEW_CLOSED.ToString(),
+                        message = "WebView is closed."
+                    });
                     break;
                 case GpmWebViewCallback.CallbackType.PageLoad:
                     if (string.IsNullOrEmpty(data) == false)
                     {
-                        Debug.LogFormat("Loaded Page:{0}", data);
+                        // Debug.LogFormat("Loaded Page:{0}", data);
                         Uri uri = new Uri(data);
-                        Uri redirectUri = new Uri(_redirectUrl);
+                        var configuration = IskraSDK.Instance.GetConfiguration();
+                        Uri redirectUri = new Uri(configuration.authRedirectUrl);
                         if (uri.AbsolutePath == redirectUri.AbsolutePath)
                         {
                             var parameters = HttpUtility.ParseQueryString(uri.Query);
@@ -83,11 +117,15 @@ namespace Iskra.Service.Platforms.Mobile
                                 refreshToken = parameters["refreshToken"],
                                 walletAddress = parameters["walletAddress"]
                             };
+                            var authToken = JsonUtility.ToJson(auth);
+                            authTokenManager.StoreToken(authToken);
                             if (auth != null && !string.IsNullOrEmpty(auth.accessToken))
                             {
                                 IskraSDK.Instance.auth = auth;
                             }
-                            _loginCallback.Invoke(IskraSDK.Instance.auth, null);
+
+                            // _loginCallback.Invoke(IskraSDK.Instance.auth, null);
+                            InvokeCallback(IskraSDK.Instance.auth, null);
                             GpmWebView.Close();
                         }
                     }
@@ -102,15 +140,32 @@ namespace Iskra.Service.Platforms.Mobile
                     {
                         if (data.Equals("USER_ CUSTOM_SCHEME") == true || data.Contains("CUSTOM_SCHEME") == true)
                         {
-                            Debug.Log(string.Format("scheme:{0}", data));
+                            Logger.Debug(string.Format("scheme:{0}", data), this);
                         }
                     }
                     else
                     {
-                        Debug.Log(string.Format("Fail to custom scheme. Error:{0}", error));
+                        Logger.Debug(string.Format("Fail to custom scheme. Error:{0}", error), this);
                     }
 
                     break;
+                case GpmWebViewCallback.CallbackType.GoBack:
+                    Logger.Debug("GoBack!!", this);
+                    break;
+            }
+        }
+
+        public AuthService.LoginCallback GetLoginCallback()
+        {
+            return _loginCallback;
+        }
+
+        void InvokeCallback(Auth data, Error error)
+        {
+            if (_loginCallback != null)
+            {
+                _loginCallback.Invoke(data, error);
+                _loginCallback = null;
             }
         }
     }

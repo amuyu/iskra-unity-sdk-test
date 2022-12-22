@@ -1,8 +1,14 @@
+using UnityEditor;
+
 namespace Iskra.Service.Platforms
 {
+    // android, ios, webGL
     public interface IAuthService
     {
-        void SetUrls(string openWebUrl, string redirectUrl);
-        void SignIn(string appId, AuthService.LoginCallback callback);
+        void Login(AuthService.LoginCallback callback);
+        void Logout(AuthService.LogoutCallback callback);
+        void StoreToken(Auth auth);
+        Auth GetLastLogin();
+        AuthService.LoginCallback GetLoginCallback();
     }
 }

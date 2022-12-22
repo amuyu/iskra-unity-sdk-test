@@ -7,9 +7,10 @@ using Iskra.Service.Platforms;
 
 namespace Iskra.Service
 {
-    public class WalletService : IWalletService
+    public class WalletService
     {
         public IWalletService walletService;
+        public delegate void OpenWalletCallback(string data, Error error);
 
         public WalletService()
         {
@@ -35,15 +36,10 @@ namespace Iskra.Service
             }
         }
 
-
-        public void SetUrls(string walletWebUrl, string redirectUrl)
+        public void OpenWallet(string accessToken, string data, string userId, OpenWalletCallback callback)
         {
-            walletService.SetUrls(walletWebUrl, redirectUrl);
+            walletService.OpenWallet(accessToken, data, userId, callback);
         }
 
-        public void OpenWallet(string appId, string accessToken, string data, string userId)
-        {
-            walletService.OpenWallet(appId, accessToken, data, userId);
-        }
     }
 }

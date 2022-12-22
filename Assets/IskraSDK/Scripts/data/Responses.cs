@@ -15,6 +15,7 @@ namespace Iskra
         public string loginPageUrl;
         public string loginSuccessUrl;
         public string verifyUrl;
+        public string refreshTokenUrl;
         public string termsPageUrl;
         public string termsSuccessUrl;
         public string termsVerifyUrl;
@@ -40,5 +41,23 @@ namespace Iskra
                 agree = agree
             };
         }
+    }
+    
+    [Serializable]
+    public class VerifyAccessTokenResponse
+    {
+        public string id;
+        public string name;
+        public string walletAddress;
+    }
+    
+    [Serializable]
+    public class RefreshAccessTokenResponse
+    {
+        public string userId;
+        public string accessToken;
+        public string refreshToken;
+        public string tokenType;
+        public long expiresAt;
     }
 }

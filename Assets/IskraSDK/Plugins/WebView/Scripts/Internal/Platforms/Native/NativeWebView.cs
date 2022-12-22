@@ -439,7 +439,7 @@
 
         private void OnAsyncEvent(GpmCommunicatorVO.Message message)
         {
-            Debug.Log("OnAsyncEvent : " + message.data);
+            // Debug.Log("OnAsyncEvent : " + message.data);
             NativeMessage nativeMessage = JsonMapper.ToObject<NativeMessage>(message.data);
 
             if (nativeMessage == null)

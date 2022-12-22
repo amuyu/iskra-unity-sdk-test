@@ -1,5 +1,6 @@
 using NativeWebSocket;
 using UnityEngine;
+using Logger = Iskra.Common.Logger;
 
 namespace Iskra.Service
 {
@@ -36,20 +37,20 @@ namespace Iskra.Service
             _webSocket = new WebSocket(url);
             _webSocket.OnOpen += () =>
             {
-                Debug.Log("Connection open!");
+                Logger.Debug("Connection open!", this);
                 webSocketAdapter.OnOpen();
                 SendWebSocketMessage("{\"action\":\"ping\",\"type\":\"client\"}");
             };
 
             _webSocket.OnError += (e) =>
             {
-                Debug.Log("Error! " + e);
+                Logger.Debug("Error! " + e, this);
                 webSocketAdapter.OnError(e);
             };
 
             _webSocket.OnClose += (e) =>
             {
-                Debug.Log("Connection closed! code:" + e);
+                Logger.Debug("Connection closed! code:" + e, this);
                 webSocketAdapter.OnClose(e);
                 _webSocket = null;
             };
@@ -58,7 +59,7 @@ namespace Iskra.Service
             {
                 // Reading a plain text message
                 var messageStr = System.Text.Encoding.UTF8.GetString(bytes);
-                Debug.Log("Received OnMessage! (" + bytes.Length + " bytes) " + messageStr);
+                Logger.Debug("Received OnMessage! (" + bytes.Length + " bytes) " + messageStr, this);
                 webSocketAdapter.OnMessage(messageStr);
             };
             await _webSocket.Connect();

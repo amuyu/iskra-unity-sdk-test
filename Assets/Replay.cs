@@ -8,7 +8,7 @@ using UnityEngine.SceneManagement;
 
 public class Replay : MonoBehaviour
 {
-    public void ReplayGame()
+    public void Signature()
     {
         IskraSDK.Instance.PrepareSigning(ProgressCallback);
     }

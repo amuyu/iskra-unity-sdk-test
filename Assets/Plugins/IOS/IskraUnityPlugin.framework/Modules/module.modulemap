@@ -1,0 +1,11 @@
+framework module IskraUnityPlugin {
+  umbrella header "IskraUnityPlugin.h"
+
+  export *
+  module * { export * }
+}
+
+module IskraUnityPlugin.Swift {
+  header "IskraUnityPlugin-Swift.h"
+  requires objc
+}

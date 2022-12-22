@@ -47,11 +47,14 @@ namespace Iskra.Service
 
         public void OnMessage(string messageStr)
         {
+            Debug.Log("messageStr:" + messageStr);
             var message = JsonUtility.FromJson<WebSocketMessage>(messageStr);
+            Debug.Log("message:" + message);
             try
             {
                 WebSocketMessage.Type type =
                     (WebSocketMessage.Type)Enum.Parse(typeof(WebSocketMessage.Type), message.type);
+                Debug.Log("type:" + type);
                 switch (type)
                 {
                     case WebSocketMessage.Type.signature:
@@ -62,6 +65,8 @@ namespace Iskra.Service
                         var status = transactionResult.doGetReceipt == "SUCCESS";
                         _callback(ProgressEventCallback.Type.OnFinish, Result.EmptyData(status));
                         WebSocketManager.Instance.Close();
+                        break;
+                    case WebSocketMessage.Type.ping:
                         break;
                 }
             }
@@ -80,7 +85,8 @@ namespace Iskra.Service
         public enum Type
         {
             signature,
-            txReceipt
+            txReceipt,
+            ping
         }
     }
 }

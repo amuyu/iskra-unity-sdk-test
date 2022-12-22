@@ -1,48 +1,30 @@
+using System;
 using System.Collections;
+using Iskra.Api;
 using UnityEngine;
 using UnityEngine.Networking;
 
 namespace Iskra.Service
 {
-    public class ConfigureManager : MonoBehaviour
+    public class ConfigureManager
     {
-        public const string ConfigureApiHost = "api.iskra.cloud";
-        public const string ConfigureApiPath = "/auth/v1/app/config";
-        
-        private static ConfigureManager instance = null;
+        public const string CONFIG_LOCAL_API_HOST = "local.iskra.world:8080";
+        public const string CONFIG_API_HOST = "api.iskra.cloud";
+        public const string CONFIG_API_PATH = "/auth/v1/app/config";
 
-        public static ConfigureManager Instance
-        {
-            get
-            {
-                if (instance == null)
-                {
-                    GameObject obj = new GameObject("IskraConfigureManager");
-                    instance = obj.AddComponent<ConfigureManager>();
-                    DontDestroyOnLoad(obj);
-                }
-
-                return instance;
-            }
-        }
+        public Configuration Configuration;
 
         public delegate void GetConfigureCallback(Configuration configuration, Error error);
 
-        public delegate void GetTermsAgreeCallback(Terms terms, Error error);
 
         public void GetConfigure(string phase, string appId, GetConfigureCallback callback)
         {
+            BaseApi.Instance.Send(FetchConfigure(phase, appId, callback));
+        }
+
+        public IEnumerator FetchConfigure(string phase, string appId, GetConfigureCallback callback)
+        {
             var url = GetConfigureUrl(phase);
-            StartCoroutine(FetchConfigure(appId, url, callback));
-        }
-
-        public void GetTermsAgree(string appId, string accessToken, string url, GetTermsAgreeCallback callback)
-        {
-            StartCoroutine(FetchTermsVerify(appId, accessToken, url, callback));
-        }
-
-        public IEnumerator FetchConfigure(string appId, string url, GetConfigureCallback callback)
-        {
             var downloadHandler = new DownloadHandlerBuffer();
             var uploadHandler = new UploadHandlerRaw(null);
 
@@ -54,53 +36,52 @@ namespace Iskra.Service
 
                 yield return request.SendWebRequest();
 
-                var configureResponse = JsonUtility.FromJson<ConfigureResponse>(request.downloadHandler.text);
-                var configuration = new Configuration
+                var error = BaseApi.HandleHttpError(request);
+                if (error != null)
                 {
-                    appId = appId,
-                    authUrl = configureResponse.user.loginPageUrl,
-                    authRedirectUrl = configureResponse.user.loginSuccessUrl,
-                    verifyUrl = configureResponse.user.verifyUrl,
-                    termsUrl = configureResponse.user.termsPageUrl,
-                    termsRedirectUrl = configureResponse.user.termsSuccessUrl,
-                    termsVerifyUrl = configureResponse.user.termsVerifyUrl,
-                    walletUrl = configureResponse.wallet.signaturePageUrl,
-                    walletRedirectUrl = configureResponse.wallet.signatureSuccessUrl,
-                    websocketUrl = configureResponse.wallet.connectUrl
-                };
-                callback(configuration, null);
-            }
-        }
+                    callback(null, error);
+                }
+                else
+                {
+                    var configureResponse = JsonUtility.FromJson<ConfigureResponse>(request.downloadHandler.text);
 
-        public IEnumerator FetchTermsVerify(string appId, string accessToken, string url,
-            GetTermsAgreeCallback callback)
-        {
-            var downloadHandler = new DownloadHandlerBuffer();
-            var uploadHandler = new UploadHandlerRaw(null);
-
-            using (var request = new UnityWebRequest(url + "?country=US", UnityWebRequest.kHttpVerbGET, downloadHandler, uploadHandler))
-            {
-                // request.timeout = System.Convert.ToInt32(timeout);
-                request.SetRequestHeader("Content-Type", "application/json");
-                request.SetRequestHeader("X-Iskra-App-Id", appId);
-                request.SetRequestHeader("Authorization", "Bearer " + accessToken);
-
-                yield return request.SendWebRequest();
-
-                var termsAgreeResponse = JsonUtility.FromJson<TermsAgreeResponse>(request.downloadHandler.text);
-                callback(termsAgreeResponse.toTerms(), null);
+                    Configuration = new Configuration(
+                        initialized: true,
+                        phase: phase,
+                        appId: appId,
+                        authUrl: configureResponse.user.loginPageUrl,
+                        authRedirectUrl: configureResponse.user.loginSuccessUrl,
+                        verifyUrl: configureResponse.user.verifyUrl,
+                        refreshTokenUrl: configureResponse.user.refreshTokenUrl,
+                        termsUrl: configureResponse.user.termsPageUrl,
+                        termsRedirectUrl: configureResponse.user.termsSuccessUrl,
+                        termsVerifyUrl: configureResponse.user.termsVerifyUrl,
+                        walletUrl: configureResponse.wallet.signaturePageUrl,
+                        walletRedirectUrl: configureResponse.wallet.signatureSuccessUrl,
+                        websocketUrl: configureResponse.wallet.connectUrl
+                    );
+                    callback(Configuration, null);
+                }
             }
         }
 
         private string GetConfigureUrl(string phase)
         {
+            if (string.IsNullOrEmpty(phase))
+            {
+                throw new ArgumentException("phase is not null or empty");
+            }
             if (phase.ToLower() == "prod")
             {
-                return string.Format("https://{0}{1}", ConfigureApiHost, ConfigureApiPath);
+                return string.Format("https://{0}{1}", CONFIG_API_HOST, CONFIG_API_PATH);
+            }
+            else if (phase.ToLower() == "local")
+            {
+                return string.Format("http://{0}{1}", CONFIG_LOCAL_API_HOST, CONFIG_API_PATH);
             }
             else
             {
-                return string.Format("https://{0}-{1}{2}", phase, ConfigureApiHost, ConfigureApiPath);
+                return string.Format("https://{0}-{1}{2}", phase, CONFIG_API_HOST, CONFIG_API_PATH);
             }
         }
     }
